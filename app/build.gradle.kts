@@ -14,8 +14,8 @@ android {
         // Bedrock's frosted glass needs Android 12.
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     // Release signing comes from ~/.gradle/gradle.properties (never from the repo):
