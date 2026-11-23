@@ -6,7 +6,7 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- The tile's dialog: Compose draws the Obsidian card, so the window itself is bare. -->
+    <!-- The tile's dialog: Compose draws the Bedrock card, so the window itself is bare. -->
     <style name="Theme.DebugQS.TileDialog" parent="android:Theme.Material.Dialog.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">true</item>

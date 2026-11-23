@@ -1,8 +1,8 @@
 [versions]
-# Obsidian pins its toolchain: AGP 9.2 / Kotlin 2.2.10 / Compose BOM 2026.02.01. Don't upgrade casually.
+# Bedrock pins its toolchain: AGP 9.2 / Kotlin 2.2.10 / Compose BOM 2026.02.01. Don't upgrade casually.
 agp = "9.2.1"
 kotlin = "2.2.10"
-obsidian = "2.0.0"
+bedrock = "0.2.0"
 activityCompose = "1.13.0"
 navigation3 = "1.0.0"
 # Same as DevQS: newer versions hide Shizuku.newProcess, which the Settings tweaks rely on.
@@ -10,7 +10,7 @@ navigation3 = "1.0.0"
 shizuku = "13.1.0"
 
 [libraries]
-obsidian = { group = "dev.redfox", name = "obsidian", version.ref = "obsidian" }
+bedrock = { group = "dev.redfox", name = "bedrock", version.ref = "bedrock" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }

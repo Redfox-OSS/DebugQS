@@ -8,7 +8,7 @@ DebugQS is an Android app: one Quick Settings tile that opens a panel with Devel
 USB debugging and Wireless debugging (plus the Wi‑Fi network and `adb connect` address), and a
 companion app for settings and first-run setup. It's a single-tile take on
 [DevQS](https://github.com/louie-velarde/DevQS) (MIT; see `NOTICE`), built on the
-[Obsidian](https://github.com/Redfox-OSS/obsidian) design system. Licensed GPL‑3.0.
+[Bedrock](https://github.com/Redfox-OSS/bedrock) design system. Licensed GPL‑3.0.
 
 Package `dev.debz.debugqs`, min SDK 31, Kotlin + Jetpack Compose + Navigation 3.
 
@@ -29,31 +29,36 @@ Package `dev.debz.debugqs`, min SDK 31, Kotlin + Jetpack Compose + Navigation 3.
 ./gradlew assembleDebug                # debug APK
 ./gradlew check                        # lint + verifyDesignRules
 ./gradlew assembleRelease              # signed release (needs the signing properties below)
+./gradlew -PlocalBedrock build         # build against ../Bedrock (a sibling checkout) instead of the release
 ```
 
 `adb` lives at `~/Library/Android/sdk/platform-tools/adb` on the maintainer's machine.
 
 ## Toolchain (pinned on purpose)
 
-Matches Obsidian 2.0.0: AGP 9.2.1, Kotlin 2.2.10 (built-in Kotlin, Compose compiler plugin),
-compile SDK 36.1, min SDK 31 (Obsidian's glass blur needs Android 12). Lint's "newer version
-available" warnings are expected; don't upgrade these without upgrading Obsidian.
+Matches Bedrock 0.2.0: AGP 9.2.1, Kotlin 2.2.10 (built-in Kotlin, Compose compiler plugin),
+compile SDK 36.1, min SDK 31 (Bedrock's glass blur needs Android 12). Lint's "newer version
+available" warnings are expected; don't upgrade these without upgrading Bedrock.
 
 Shizuku is pinned to 13.1.0, like DevQS: later versions hide `Shizuku.newProcess`, which the
 Developer options page swap and the Wireless debugging shortcut rely on.
 
 ## Design rules
 
-The UI follows Obsidian (`docs/GUIDE.md` in the Obsidian repo). The essentials:
+The UI follows Bedrock (`docs/GUIDE.md` in the Bedrock repo). The essentials:
 
-- Colours and type only from `ObsidianTheme.colors` / `ObsidianTheme.typography`; no
+- Colours and type only from `BedrockTheme.colors` / `BedrockTheme.typography`; no
   `MaterialTheme.*`, no `Color(0x…)`. No `clickable`/ripples: use `Modifier.pressable { }`.
   `verifyDesignRules` (part of `check`) fails the build on these.
-- One strong glow per region: one `PrimaryButton` per screen; secondary actions are
-  `ActionPillButton` / `PillButton`.
-- Use our `ListRow` (in `ui/Shared.kt`), not Obsidian's `ObListRow`: `ObListRow` cuts subtitles to
-  one line, and settings descriptions must wrap.
-- Use `CopyButton` for long values (commands); Obsidian's `CopyPill` repeats the whole value.
+- No glows, nothing overshoots: colour lives inside surfaces (accent containers, the welcome
+  screen's aura); motion uses `BrMotion` / `BrTransitions`. Sentence case everywhere.
+- One `Primary` `BrButton` per screen region; secondary actions are `Tonal` (usually `Small`).
+- Grouped rows go in a `ListGroup`, with `divider = true` on all but the last. Use our `ListRow`
+  (in `ui/Shared.kt`), not Bedrock's: Bedrock's cuts subtitles to two lines, and settings
+  descriptions must wrap.
+- Use `CopyButton` for long values (commands, the adb address): it never repeats the value.
+- Saved accent and background names may still be Obsidian's (Emerald, Dark, …): `accentFor` /
+  `neutralsFor` in `ui/Shared.kt` map them to Bedrock's. Keep that mapping.
 - Keep copy short and spacious; the user dislikes dense screens. Check every UI change in a
   screenshot.
 

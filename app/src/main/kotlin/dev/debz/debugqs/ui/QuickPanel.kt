@@ -1,9 +1,6 @@
 package dev.debz.debugqs.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,25 +18,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import dev.debz.debugqs.R
 import dev.debz.debugqs.core.ToggleResult
 import dev.debz.debugqs.core.message
 import dev.debz.debugqs.core.summary
-import dev.redfox.obsidian.components.HeaderIconButton
-import dev.redfox.obsidian.components.IconTile
-import dev.redfox.obsidian.components.PillButton
-import dev.redfox.obsidian.effects.ObGlows
-import dev.redfox.obsidian.effects.glow
-import dev.redfox.obsidian.motion.CollapseExit
-import dev.redfox.obsidian.motion.ExpandEnter
-import dev.redfox.obsidian.motion.RollSwap
-import dev.redfox.obsidian.theme.ObShapes
-import dev.redfox.obsidian.theme.ObSpacing
-import dev.redfox.obsidian.theme.ObsidianTheme
+import dev.redfox.bedrock.components.BrButton
+import dev.redfox.bedrock.components.BrIconButton
+import dev.redfox.bedrock.components.ButtonSize
+import dev.redfox.bedrock.components.ButtonVariant
+import dev.redfox.bedrock.components.IconButtonVariant
+import dev.redfox.bedrock.components.IconTile
+import dev.redfox.bedrock.components.ListGroup
+import dev.redfox.bedrock.effects.floatShadow
+import dev.redfox.bedrock.effects.glass
+import dev.redfox.bedrock.motion.BrTransitions
+import dev.redfox.bedrock.motion.SwapText
+import dev.redfox.bedrock.theme.BedrockTheme
+import dev.redfox.bedrock.theme.BrShapes
+import dev.redfox.bedrock.theme.BrSpacing
 import kotlinx.coroutines.delay
 
 /** Where the panel's links go; the tile collapses the shade before opening any of them. */
@@ -57,10 +55,13 @@ fun QuickPanel(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
+    val type = BedrockTheme.typography
     val state by rememberDevState()
     val prefs by rememberPreferences()
     var message by remember { mutableStateOf<String?>(null) }
+    // Blocks inside the panel follow its corners, inset by its padding.
+    val inner = BrShapes.concentric(BrShapes.XLargeRadius, BrSpacing.Gutter)
 
     LaunchedEffect(message) {
         if (message != null) {
@@ -69,84 +70,96 @@ fun QuickPanel(
         }
     }
 
+    // A floating surface, so it takes Bedrock's one neutral shadow. No haze in this window:
+    // glass falls back to a solid surface with the lit rim, like Bedrock's own dialogs.
     Column(
         modifier
             .fillMaxWidth()
-            .padding(horizontal = ObSpacing.L)
-            .glow(Color.Black, ObShapes.CardLarge, ObGlows.Elevation)
-            .clip(ObShapes.CardLarge)
-            .background(colors.card)
-            .border(1.dp, colors.borderStrong, ObShapes.CardLarge)
-            .padding(ObSpacing.Gutter),
-        verticalArrangement = Arrangement.spacedBy(ObSpacing.L),
+            .padding(horizontal = BrSpacing.L)
+            .floatShadow(BrShapes.XLarge)
+            .glass(BrShapes.XLarge, tint = colors.surface)
+            .padding(BrSpacing.Gutter),
+        verticalArrangement = Arrangement.spacedBy(BrSpacing.L),
     ) {
         // Header
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(
-                icon = R.drawable.ic_tile,
+                painterResource(R.drawable.ic_tile),
+                tint = colors.accentSoft,
+                container = colors.accentContainerStrong,
                 size = 44.dp,
-                background = colors.accentContainerStrong,
-                tint = colors.accentLight,
+                iconSize = 22.dp,
             )
-            Spacer(Modifier.width(ObSpacing.M))
+            Spacer(Modifier.width(BrSpacing.M))
             Column(Modifier.weight(1f)) {
-                Text("DebugQS", style = ObsidianTheme.typography.title, color = colors.textPrimary)
-                AnimatedContent(state.summary(), transitionSpec = { RollSwap }, label = "summary") {
-                    Text(it, style = ObsidianTheme.typography.body, color = colors.textSecondary)
-                }
+                Text("DebugQS", style = type.headline, color = colors.textPrimary)
+                SwapText(state.summary(), type.body, colors.textSecondary)
             }
-            HeaderIconButton(
-                icon = R.drawable.ic_settings,
+            BrIconButton(
+                painterResource(R.drawable.ic_settings),
                 contentDescription = "Open DebugQS",
                 onClick = { onOpen(PanelTarget.App) },
+                variant = IconButtonVariant.Plain,
                 tint = colors.textSecondary,
             )
-            HeaderIconButton(
-                icon = R.drawable.ic_close,
+            BrIconButton(
+                painterResource(R.drawable.ic_close),
                 contentDescription = "Close",
                 onClick = onDismiss,
+                variant = IconButtonVariant.Plain,
                 tint = colors.textSecondary,
             )
         }
 
         if (state.hasPermission) {
-            ToggleRows(
-                state = state,
-                onToggle = { toggle, on ->
-                    val result = context.toggle(toggle, on)
-                    message = result.message()
-                    if (result == ToggleResult.Ok && prefs.dismissAfterToggle) onDismiss()
-                },
+            ListGroup(shape = inner, color = colors.surfaceRaised) {
+                ToggleRows(
+                    state = state,
+                    onToggle = { toggle, on ->
+                        val result = context.toggle(toggle, on)
+                        message = result.message()
+                        if (result == ToggleResult.Ok && prefs.dismissAfterToggle) onDismiss()
+                    },
+                )
+            }
+            WirelessInfo(
+                state,
+                container = colors.surfaceRaised,
+                shape = inner,
+                onShowName = { onOpen(PanelTarget.App) },
             )
-            WirelessInfo(state, onShowName = { onOpen(PanelTarget.App) })
         } else {
             PermissionSetup(state, compact = true)
         }
 
-        AnimatedVisibility(message != null, enter = ExpandEnter, exit = CollapseExit) {
+        AnimatedVisibility(message != null, enter = BrTransitions.expandIn, exit = BrTransitions.collapseOut) {
             Text(
                 message.orEmpty(),
-                style = ObsidianTheme.typography.labelStrong,
-                color = colors.warning,
-                modifier = Modifier.padding(horizontal = ObSpacing.XXS),
+                style = type.label,
+                color = colors.caution,
+                modifier = Modifier.padding(horizontal = BrSpacing.XXS),
             )
         }
 
         // Links out
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(ObSpacing.S),
-            verticalArrangement = Arrangement.spacedBy(ObSpacing.S),
+            horizontalArrangement = Arrangement.spacedBy(BrSpacing.S),
+            verticalArrangement = Arrangement.spacedBy(BrSpacing.S),
         ) {
-            PillButton(
+            BrButton(
                 text = "Developer options",
-                icon = R.drawable.ic_open_in_new,
                 onClick = { onOpen(PanelTarget.DeveloperOptions) },
+                variant = ButtonVariant.Tonal,
+                size = ButtonSize.Small,
+                icon = painterResource(R.drawable.ic_open_in_new),
             )
             if (state.wireless) {
-                PillButton(
+                BrButton(
                     text = "Pair devices",
-                    icon = R.drawable.ic_open_in_new,
                     onClick = { onOpen(PanelTarget.WirelessDebugging) },
+                    variant = ButtonVariant.Tonal,
+                    size = ButtonSize.Small,
+                    icon = painterResource(R.drawable.ic_open_in_new),
                 )
             }
         }

@@ -120,7 +120,7 @@ Requires JDK 17+ and the Android SDK (compile SDK 36.1).
 
 ```bash
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
-./gradlew check                # lint and the Obsidian design-rule check
+./gradlew check                # lint and the Bedrock design-rule check
 ```
 
 Release builds are signed with a key that's never stored in the repository. To sign your own,
@@ -135,7 +135,7 @@ DEBUGQS_KEY_PASSWORD=…
 
 then run `./gradlew assembleRelease`. Without them, the release build is left unsigned.
 
-**Stack:** Kotlin, Jetpack Compose, Navigation 3, the [Obsidian](https://github.com/Redfox-OSS/obsidian)
+**Stack:** Kotlin, Jetpack Compose, Navigation 3, the [Bedrock](https://github.com/Redfox-OSS/bedrock)
 design system, and the [Shizuku API](https://github.com/RikkaApps/Shizuku-API).
 
 ## Credits
@@ -143,8 +143,8 @@ design system, and the [Shizuku API](https://github.com/RikkaApps/Shizuku-API).
 - [DevQS](https://github.com/louie-velarde/DevQS) by Louie Velarde, which introduced the three
   separate tiles this app combines into one. Parts of DebugQS's settings, Shizuku and wireless
   debugging logic are adapted from it (MIT, see [NOTICE](NOTICE)).
-- [Obsidian](https://github.com/Redfox-OSS/obsidian), the design system the UI is built on
-  (Apache 2.0).
+- [Bedrock](https://github.com/Redfox-OSS/bedrock), the design system the UI is built on
+  (GPL 3.0).
 
 ## License
 

@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "dev.debz.debugqs"
-        // Obsidian's frosted glass needs Android 12.
+        // Bedrock's frosted glass needs Android 12.
         minSdk = 31
         targetSdk = 36
         versionCode = 1
@@ -51,7 +51,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.obsidian)
+    implementation(libs.bedrock)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
@@ -59,14 +59,14 @@ dependencies {
     implementation(libs.shizuku.provider)
 }
 
-// Keeps screens on the Obsidian design system (from Obsidian's docs/NEW_APP.md).
+// Keeps screens on the Bedrock design system: tokens only, no Material theme, no ripples.
 val verifyDesignRules = tasks.register("verifyDesignRules") {
     group = "verification"
     val sources = fileTree("src/main") { include("**/*.kt") }
     inputs.files(sources)
     doLast {
         val rules = listOf(
-            Regex("""\bMaterialTheme\.""") to "use ObsidianTheme.colors / typography",
+            Regex("""\bMaterialTheme\.""") to "use BedrockTheme.colors / typography",
             Regex("""\.(combinedC|c)lickable\s*[({]""") to "use Modifier.pressable { }",
             Regex("""\bripple\s*\(""") to "no ripples; use Modifier.pressable",
             Regex("""\bColor\s*\(\s*0x""") to "hard-coded colour; use a token",
@@ -78,7 +78,7 @@ val verifyDesignRules = tasks.register("verifyDesignRules") {
                     .map { (_, why) -> "${file.path}:${i + 1}: $why" }
             }
         }
-        if (problems.isNotEmpty()) throw GradleException("Obsidian design rules:\n" + problems.joinToString("\n"))
+        if (problems.isNotEmpty()) throw GradleException("Bedrock design rules:\n" + problems.joinToString("\n"))
     }
 }
 tasks.named("check") { dependsOn(verifyDesignRules) }

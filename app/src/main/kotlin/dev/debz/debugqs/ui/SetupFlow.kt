@@ -14,10 +14,10 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,25 +62,31 @@ import dev.debz.debugqs.core.Privileged
 import dev.debz.debugqs.core.PrivilegedState
 import dev.debz.debugqs.core.summary
 import dev.debz.debugqs.tile.DebugTileService
-import dev.redfox.obsidian.components.ActionPillButton
-import dev.redfox.obsidian.components.HeaderIconButton
-import dev.redfox.obsidian.components.ObCard
-import dev.redfox.obsidian.components.ObSpinner
-import dev.redfox.obsidian.components.PillButton
-import dev.redfox.obsidian.components.PrimaryButton
-import dev.redfox.obsidian.effects.ambientFloat
-import dev.redfox.obsidian.effects.breathingGlow
-import dev.redfox.obsidian.effects.pressable
-import dev.redfox.obsidian.motion.CollapseExit
-import dev.redfox.obsidian.motion.ExpandEnter
-import dev.redfox.obsidian.motion.ObMotion
-import dev.redfox.obsidian.motion.RevealColumn
-import dev.redfox.obsidian.motion.RevealScope
-import dev.redfox.obsidian.motion.revealOnEnter
-import dev.redfox.obsidian.theme.ObShapes
-import dev.redfox.obsidian.theme.ObSpacing
-import dev.redfox.obsidian.theme.ObsidianTheme
-import dev.redfox.obsidian.theme.ScreenGutter
+import dev.redfox.bedrock.components.BrButton
+import dev.redfox.bedrock.components.BrCard
+import dev.redfox.bedrock.components.BrIconButton
+import dev.redfox.bedrock.components.BrRadio
+import dev.redfox.bedrock.components.BrSpinner
+import dev.redfox.bedrock.components.BrTag
+import dev.redfox.bedrock.components.ButtonSize
+import dev.redfox.bedrock.components.ButtonVariant
+import dev.redfox.bedrock.components.IconButtonVariant
+import dev.redfox.bedrock.components.IconTile
+import dev.redfox.bedrock.components.ListGroup
+import dev.redfox.bedrock.components.TagTone
+import dev.redfox.bedrock.effects.aura
+import dev.redfox.bedrock.effects.pressable
+import dev.redfox.bedrock.effects.rememberAura
+import dev.redfox.bedrock.effects.rim
+import dev.redfox.bedrock.motion.BrDurations
+import dev.redfox.bedrock.motion.BrMotion
+import dev.redfox.bedrock.motion.BrTransitions
+import dev.redfox.bedrock.motion.RevealColumn
+import dev.redfox.bedrock.motion.RevealScope
+import dev.redfox.bedrock.motion.revealOnEnter
+import dev.redfox.bedrock.theme.BedrockTheme
+import dev.redfox.bedrock.theme.BrShapes
+import dev.redfox.bedrock.theme.BrSpacing
 import kotlinx.coroutines.delay
 
 /** The screens of the first-run setup, in order. */
@@ -102,7 +108,7 @@ fun SetupFlow(
     startAt: SetupStep = SetupStep.Welcome,
     onBackFromStart: (() -> Unit)? = null,
 ) {
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
     val state by rememberDevState()
     var step by rememberSaveable { mutableStateOf(startAt) }
     var forward by remember { mutableStateOf(true) }
@@ -145,11 +151,7 @@ fun SetupFlow(
             )
             AnimatedContent(
                 targetState = step,
-                transitionSpec = {
-                    val dir = if (forward) 1 else -1
-                    (fadeIn(tween(220)) + slideInHorizontally(ObMotion.gentle()) { dir * it / 12 })
-                        .togetherWith(fadeOut(tween(120)))
-                },
+                transitionSpec = { if (forward) BrTransitions.push() else BrTransitions.pop() },
                 modifier = Modifier.weight(1f),
                 label = "setupStep",
             ) { current ->
@@ -163,19 +165,22 @@ fun SetupFlow(
                     }
                 }
             }
-            Box(Modifier.padding(horizontal = ScreenGutter, vertical = ObSpacing.L)) {
+            Box(Modifier.padding(horizontal = BrSpacing.Gutter, vertical = BrSpacing.L)) {
+                val wide = Modifier.fillMaxWidth()
                 when (step) {
-                    SetupStep.Welcome -> PrimaryButton("Get started", onClick = { go(SetupStep.Method) })
-                    SetupStep.Method -> PrimaryButton(
+                    SetupStep.Welcome -> BrButton("Get started", onClick = { go(SetupStep.Method) }, modifier = wide)
+                    SetupStep.Method -> BrButton(
                         "Continue",
                         onClick = { go(if (state.hasPermission) SetupStep.Tile else method) },
+                        modifier = wide,
                     )
-                    SetupStep.Computer, SetupStep.Shizuku -> PrimaryButton(
+                    SetupStep.Computer, SetupStep.Shizuku -> BrButton(
                         text = "Continue",
                         enabled = state.hasPermission,
                         onClick = { go(SetupStep.Tile) },
+                        modifier = wide,
                     )
-                    SetupStep.Tile -> PrimaryButton("Done", onClick = onFinish)
+                    SetupStep.Tile -> BrButton("Done", onClick = onFinish, modifier = wide)
                 }
             }
         }
@@ -184,13 +189,20 @@ fun SetupFlow(
 
 @Composable
 private fun TopBar(step: SetupStep, onBack: (() -> Unit)?, onSkip: (() -> Unit)?) {
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
     Row(
-        Modifier.fillMaxWidth().height(56.dp).padding(horizontal = ObSpacing.S),
+        Modifier.fillMaxWidth().height(56.dp).padding(horizontal = BrSpacing.M),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(44.dp)) {
-            if (onBack != null) HeaderIconButton(dev.redfox.obsidian.R.drawable.ob_ic_back, "Back", onBack, tint = colors.textSecondary)
+            if (onBack != null) {
+                BrIconButton(
+                    painterResource(dev.redfox.bedrock.R.drawable.br_ic_back),
+                    contentDescription = "Back",
+                    onClick = onBack,
+                    variant = IconButtonVariant.Glass,
+                )
+            }
         }
         Spacer(Modifier.weight(1f))
         // Three dots: access, grant, tile. The welcome screen shows none.
@@ -203,11 +215,12 @@ private fun TopBar(step: SetupStep, onBack: (() -> Unit)?, onSkip: (() -> Unit)?
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 repeat(3) { i ->
                     val color by animateColorAsState(
-                        if (i <= index) colors.accent else colors.tileHigh, ObMotion.snappy(), label = "dot",
+                        if (i <= index) colors.accentMain else colors.surfaceHigh, BrMotion.quick(), label = "dot",
                     )
+                    val width by animateDpAsState(if (i == index) 22.dp else 8.dp, BrMotion.settle(), label = "dotWidth")
                     Box(
                         Modifier
-                            .size(width = if (i == index) 22.dp else 8.dp, height = 8.dp)
+                            .size(width = width, height = 8.dp)
                             .clip(CircleShape)
                             .background(color)
                     )
@@ -219,12 +232,12 @@ private fun TopBar(step: SetupStep, onBack: (() -> Unit)?, onSkip: (() -> Unit)?
             if (onSkip != null) {
                 Text(
                     "Skip",
-                    style = ObsidianTheme.typography.labelStrong,
+                    style = BedrockTheme.typography.label,
                     color = colors.textSecondary,
                     modifier = Modifier
                         .clip(CircleShape)
-                        .pressable(pressedScale = 0.93f, onClick = onSkip)
-                        .padding(horizontal = ObSpacing.M, vertical = ObSpacing.M),
+                        .pressable(pressedScale = 0.94f, onClick = onSkip)
+                        .padding(horizontal = BrSpacing.M, vertical = BrSpacing.M),
                 )
             }
         }
@@ -238,13 +251,16 @@ private fun StepPage(title: String, lead: String, content: @Composable () -> Uni
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = ScreenGutter)
-            .padding(top = ObSpacing.L, bottom = ObSpacing.L),
-        verticalArrangement = Arrangement.spacedBy(ObSpacing.L),
+            .padding(horizontal = BrSpacing.Gutter)
+            .padding(top = BrSpacing.L, bottom = BrSpacing.L),
+        verticalArrangement = Arrangement.spacedBy(BrSpacing.L),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.S)) {
-            Text(title, style = ObsidianTheme.typography.screenTitle, color = ObsidianTheme.colors.textPrimary)
-            Text(lead, style = ObsidianTheme.typography.body, color = ObsidianTheme.colors.textSecondary)
+        Column(
+            Modifier.padding(bottom = BrSpacing.S),
+            verticalArrangement = Arrangement.spacedBy(BrSpacing.S),
+        ) {
+            Text(title, style = BedrockTheme.typography.title, color = BedrockTheme.colors.textPrimary)
+            Text(lead, style = BedrockTheme.typography.body, color = BedrockTheme.colors.textSecondary)
         }
         content()
     }
@@ -254,42 +270,41 @@ private fun StepPage(title: String, lead: String, content: @Composable () -> Uni
 
 @Composable
 private fun WelcomeStep() {
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
     Column(
-        Modifier.fillMaxSize().padding(horizontal = ObSpacing.XXL),
+        Modifier.fillMaxSize().padding(horizontal = BrSpacing.XXL),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(1f))
+        // The screen's one hero: the tile's icon on a slowly drifting aura of the accent.
         Box(
             Modifier
                 .revealOnEnter(0)
-                .ambientFloat()
-                .breathingGlow(colors.accent, ObShapes.CardLarge)
                 .size(112.dp)
-                .clip(ObShapes.CardLarge)
-                .background(colors.accentContainer)
-                .border(1.dp, colors.accentBorder, ObShapes.CardLarge),
+                .clip(BrShapes.XLarge)
+                .aura(rememberAura(colors.accent), drift = true)
+                .rim(BrShapes.XLarge),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(painterResource(R.drawable.ic_tile), null, tint = colors.accentLight, modifier = Modifier.size(52.dp))
+            Icon(painterResource(R.drawable.ic_tile), null, tint = colors.textPrimary, modifier = Modifier.size(52.dp))
         }
-        Spacer(Modifier.height(ObSpacing.XXL))
+        Spacer(Modifier.height(BrSpacing.XXL))
         Text(
             "DebugQS",
-            style = ObsidianTheme.typography.numericLarge,
+            style = BedrockTheme.typography.display,
             color = colors.textPrimary,
             modifier = Modifier.revealOnEnter(1),
         )
-        Spacer(Modifier.height(ObSpacing.S))
+        Spacer(Modifier.height(BrSpacing.S))
         Text(
             "Developer switches, one tile away.",
-            style = ObsidianTheme.typography.bodyLarge,
+            style = BedrockTheme.typography.bodyLarge,
             color = colors.textSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.revealOnEnter(2),
         )
         Spacer(Modifier.weight(0.8f))
-        Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.XL)) {
+        Column(verticalArrangement = Arrangement.spacedBy(BrSpacing.XL)) {
             Feature(3, R.drawable.ic_developer_mode, "Toggle Developer options")
             Feature(4, R.drawable.ic_wifi, "Copy your wireless adb address")
             Feature(5, R.drawable.ic_lock_open, "Set up once, that's it")
@@ -300,11 +315,11 @@ private fun WelcomeStep() {
 
 @Composable
 private fun Feature(index: Int, @DrawableRes icon: Int, title: String) {
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
     Row(Modifier.revealOnEnter(index), verticalAlignment = Alignment.CenterVertically) {
-        Icon(painterResource(icon), null, tint = colors.accentLight, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(ObSpacing.L))
-        Text(title, style = ObsidianTheme.typography.bodyLarge, color = colors.textPrimary)
+        IconTile(painterResource(icon), tint = colors.accentSoft, container = colors.accentContainer)
+        Spacer(Modifier.width(BrSpacing.L))
+        Text(title, style = BedrockTheme.typography.bodyLarge, color = colors.textPrimary)
     }
 }
 
@@ -343,6 +358,7 @@ private fun MethodStep(state: DevState, method: SetupStep, onPick: (SetupStep) -
     }
 }
 
+/** One way to grant the permission. The chosen card fills with the accent container. */
 @Composable
 private fun MethodCard(
     selected: Boolean,
@@ -352,44 +368,27 @@ private fun MethodCard(
     body: String,
     onClick: () -> Unit,
 ) {
-    val colors = ObsidianTheme.colors
-    val border by animateColorAsState(if (selected) colors.accentBorder else colors.border, ObMotion.snappy(), label = "border")
-    val fill by animateColorAsState(if (selected) colors.accentContainer else colors.card, ObMotion.snappy(), label = "fill")
-    ObCard(Modifier.fillMaxWidth(), color = fill, borderColor = border, onClick = onClick) {
+    val colors = BedrockTheme.colors
+    val type = BedrockTheme.typography
+    val fill by animateColorAsState(if (selected) colors.accentContainer else colors.surface, BrMotion.quick(), label = "fill")
+    val tile by animateColorAsState(if (selected) colors.accentContainerStrong else colors.surfaceHigh, BrMotion.quick(), label = "tile")
+    val tint by animateColorAsState(if (selected) colors.accentSoft else colors.textSecondary, BrMotion.quick(), label = "tint")
+    BrCard(Modifier.fillMaxWidth(), color = fill, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(44.dp).clip(ObShapes.Tile).background(if (selected) colors.accentContainerStrong else colors.tile),
-                contentAlignment = Alignment.Center,
-            ) { Icon(painterResource(icon), null, tint = if (selected) colors.accentLight else colors.textSecondary) }
-            Spacer(Modifier.width(ObSpacing.M))
-            Column(Modifier.weight(1f)) {
+            IconTile(painterResource(icon), tint = tint, container = tile, size = 44.dp, iconSize = 22.dp)
+            Spacer(Modifier.width(BrSpacing.M))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(BrSpacing.XXS)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, style = ObsidianTheme.typography.bodyLarge, color = colors.textPrimary)
+                    Text(title, style = type.label, color = colors.textPrimary)
                     if (badge != null) {
-                        Spacer(Modifier.width(ObSpacing.S))
-                        Text(
-                            badge.uppercase(),
-                            style = ObsidianTheme.typography.caption,
-                            color = colors.accentLight,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(colors.accentContainerStrong)
-                                .padding(horizontal = ObSpacing.S, vertical = 2.dp),
-                        )
+                        Spacer(Modifier.width(BrSpacing.S))
+                        BrTag(badge, tone = TagTone.Accent)
                     }
                 }
-                Text(body, style = ObsidianTheme.typography.body, color = colors.textSecondary)
+                Text(body, style = type.body, color = colors.textSecondary)
             }
-            Spacer(Modifier.width(ObSpacing.S))
-            Box(
-                Modifier
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, if (selected) colors.accent else colors.textDisabled, CircleShape)
-                    .padding(5.dp)
-                    .clip(CircleShape)
-                    .background(if (selected) colors.accent else colors.card)
-            )
+            Spacer(Modifier.width(BrSpacing.XS))
+            BrRadio(selected = selected, onClick = onClick)
         }
     }
 }
@@ -417,9 +416,9 @@ private fun ComputerStep(state: DevState) {
                     if (isSamsung) "Settings › About phone › Software information, then tap Build number seven times."
                     else "Settings › About phone, then tap Build number seven times."
                 )
-                PillButton("Open About phone", icon = R.drawable.ic_open_in_new, onClick = {
+                StepButton("Open About phone", R.drawable.ic_open_in_new) {
                     context.tryStart(Intent(Settings.ACTION_DEVICE_INFO_SETTINGS))
-                })
+                }
             }
             ChecklistItem(
                 number = 2,
@@ -428,9 +427,9 @@ private fun ComputerStep(state: DevState) {
                 doneText = "On",
             ) {
                 Hint("In Developer options, switch on USB debugging.")
-                PillButton("Open Developer options", icon = R.drawable.ic_open_in_new, onClick = {
+                StepButton("Open Developer options", R.drawable.ic_open_in_new) {
                     Launch.openDeveloperOptions(context)
-                })
+                }
             }
             ChecklistItem(
                 number = 3,
@@ -440,21 +439,21 @@ private fun ComputerStep(state: DevState) {
             ) {
                 Hint("Plug the phone in, accept “Allow USB debugging?” on the phone, then run:")
                 CommandBox(command)
-                Row(horizontalArrangement = Arrangement.spacedBy(ObSpacing.S), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(BrSpacing.S), verticalAlignment = Alignment.CenterVertically) {
                     CopyButton(command)
-                    PillButton("Send to computer", icon = R.drawable.ic_share, onClick = {
+                    StepButton("Send to computer", R.drawable.ic_share) {
                         context.tryStart(
                             Intent.createChooser(
                                 Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, command),
                                 "Send the command",
                             )
                         )
-                    })
+                    }
                 }
                 Hint("No adb yet? Install Android’s platform-tools on the computer first.")
-                PillButton("Get platform-tools", icon = R.drawable.ic_download, onClick = {
+                StepButton("Get platform-tools", R.drawable.ic_download) {
                     context.tryStart(Intent(Intent.ACTION_VIEW, Uri.parse(PLATFORM_TOOLS)))
-                })
+                }
             }
         }
         GrantStatus(state.hasPermission)
@@ -483,27 +482,27 @@ private fun ShizukuStep(state: DevState) {
         Checklist {
             ChecklistItem(1, "Install Shizuku", done = installed, doneText = if (Privileged.isSui) "Sui" else "Installed") {
                 Hint("Shizuku is free and open source.")
-                PillButton("Get Shizuku", icon = R.drawable.ic_download, onClick = {
+                StepButton("Get Shizuku", R.drawable.ic_download) {
                     context.tryStart(Intent(Intent.ACTION_VIEW, Uri.parse(SHIZUKU_DOWNLOAD)))
-                })
+                }
             }
             ChecklistItem(2, "Start Shizuku", done = running, doneText = "Running") {
                 Hint("Open Shizuku and start it with Wireless debugging (or root). It walks you through it.")
                 if (installed) {
-                    PillButton("Open Shizuku", icon = R.drawable.ic_open_in_new, onClick = {
+                    StepButton("Open Shizuku", R.drawable.ic_open_in_new) {
                         context.packageManager.getLaunchIntentForPackage(SHIZUKU_PACKAGE)?.let { context.tryStart(it) }
-                    })
+                    }
                 }
             }
             ChecklistItem(3, "Allow DebugQS", done = state.hasPermission, doneText = "Granted") {
                 if (running) {
                     Hint("Shizuku asks once; DebugQS then grants itself the permission.")
-                    PillButton(
+                    // The step's own action, so it takes the accent.
+                    BrButton(
                         "Allow",
-                        icon = R.drawable.ic_bolt,
                         onClick = { Privileged.requestPermission() },
-                        containerColor = ObsidianTheme.colors.accentContainerStrong,
-                        contentColor = ObsidianTheme.colors.accentLight,
+                        size = ButtonSize.Small,
+                        icon = painterResource(R.drawable.ic_bolt),
                     )
                 } else {
                     Hint("Available once Shizuku is running.")
@@ -520,7 +519,8 @@ private fun ShizukuStep(state: DevState) {
 @Composable
 private fun TileStep() {
     val context = LocalContext.current
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
+    val type = BedrockTheme.typography
     val state by rememberDevState()
     val tileLabel = stringResource(R.string.tile_label)
     var requested by remember { mutableStateOf(false) }
@@ -533,59 +533,52 @@ private fun TileStep() {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Row(
                 Modifier
-                    .padding(vertical = ObSpacing.M)
-                    .breathingGlow(colors.accent, CircleShape)
+                    .padding(vertical = BrSpacing.M)
                     .clip(CircleShape)
                     .background(colors.accentContainerStrong)
-                    .border(1.dp, colors.accentBorder, CircleShape)
-                    .padding(horizontal = ObSpacing.XL, vertical = ObSpacing.L),
+                    .padding(horizontal = BrSpacing.XL, vertical = BrSpacing.L),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(painterResource(R.drawable.ic_tile), null, tint = colors.accentLight)
-                Spacer(Modifier.width(ObSpacing.M))
+                Icon(painterResource(R.drawable.ic_tile), null, tint = colors.accentSoft)
+                Spacer(Modifier.width(BrSpacing.M))
                 Column {
-                    Text("DebugQS", style = ObsidianTheme.typography.bodyLarge, color = colors.textPrimary)
-                    Text(
-                        state.summary(),
-                        style = ObsidianTheme.typography.body,
-                        color = colors.accentLight,
-                    )
+                    Text("DebugQS", style = type.label, color = colors.textPrimary)
+                    Text(state.summary(), style = type.body, color = colors.accentSoft)
                 }
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ActionPillButton(
+            BrButton(
                 text = if (requested) "Add again" else "Add to Quick Settings",
                 icon = painterResource(R.drawable.ic_add_box),
+                variant = ButtonVariant.Tonal,
+                size = ButtonSize.Medium,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                requested = true
-                context.getSystemService(StatusBarManager::class.java).requestAddTileService(
-                    ComponentName(context, DebugTileService::class.java),
-                    tileLabel,
-                    Icon.createWithResource(context, R.drawable.ic_tile),
-                    context.mainExecutor,
-                ) { }
+                    requested = true
+                    context.getSystemService(StatusBarManager::class.java).requestAddTileService(
+                        ComponentName(context, DebugTileService::class.java),
+                        tileLabel,
+                        Icon.createWithResource(context, R.drawable.ic_tile),
+                        context.mainExecutor,
+                    ) { }
                 },
             )
         } else {
             Hint("Swipe down twice, tap the pencil to edit Quick Settings, and drag DebugQS into place.")
         }
-        ObCard(Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.M)) {
-                ListRow(
-                    title = "Tap",
-                    subtitle = "Switches, Wi‑Fi and adb address",
-                    icon = R.drawable.ic_touch_app,
-                    titleStyleLarge = true,
-                )
-                ListRow(
-                    title = "Long press",
-                    subtitle = "Developer options (you can change it)",
-                    icon = R.drawable.ic_settings,
-                    titleStyleLarge = true,
-                )
-            }
+        ListGroup {
+            ListRow(
+                title = "Tap",
+                subtitle = "Switches, Wi‑Fi and adb address",
+                icon = R.drawable.ic_touch_app,
+                divider = true,
+            )
+            ListRow(
+                title = "Long press",
+                subtitle = "Developer options (you can change it)",
+                icon = R.drawable.ic_settings,
+            )
         }
     }
 }
@@ -594,9 +587,21 @@ private fun TileStep() {
 
 @Composable
 private fun Checklist(content: @Composable () -> Unit) {
-    ObCard(Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.L)) { content() }
+    BrCard(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(BrSpacing.L)) { content() }
     }
+}
+
+/** A step's secondary action: a small tonal button with an icon. */
+@Composable
+private fun StepButton(text: String, @DrawableRes icon: Int, onClick: () -> Unit) {
+    BrButton(
+        text,
+        onClick = onClick,
+        variant = ButtonVariant.Tonal,
+        size = ButtonSize.Small,
+        icon = painterResource(icon),
+    )
 }
 
 /** A numbered step that turns into a check once [done]; its instructions fold away then. */
@@ -608,33 +613,44 @@ private fun ChecklistItem(
     doneText: String,
     content: @Composable () -> Unit,
 ) {
-    val colors = ObsidianTheme.colors
-    val badge by animateColorAsState(if (done) colors.accent else colors.tile, ObMotion.snappy(), label = "badge")
+    val colors = BedrockTheme.colors
+    val type = BedrockTheme.typography
+    val badge by animateColorAsState(if (done) colors.accentMain else colors.surfaceHigh, BrMotion.quick(), label = "badge")
     Row(verticalAlignment = Alignment.Top) {
         Box(Modifier.size(28.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) {
-            AnimatedContent(done, label = "badgeContent") { isDone ->
+            AnimatedContent(
+                done,
+                transitionSpec = {
+                    fadeIn(tween(BrDurations.Swap, easing = BrMotion.Calm)) togetherWith fadeOut(tween(BrDurations.Fade))
+                },
+                label = "badgeContent",
+            ) { isDone ->
                 if (isDone) {
                     Icon(painterResource(R.drawable.ic_check), "Done", tint = colors.onAccent, modifier = Modifier.size(18.dp))
                 } else {
-                    Text("$number", style = ObsidianTheme.typography.labelStrong, color = colors.textPrimary)
+                    Text("$number", style = type.figure, color = colors.textPrimary)
                 }
             }
         }
-        Spacer(Modifier.width(ObSpacing.M))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ObSpacing.S)) {
+        Spacer(Modifier.width(BrSpacing.M))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(BrSpacing.S)) {
             Row(Modifier.height(28.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     title,
-                    style = ObsidianTheme.typography.bodyLarge,
+                    style = type.label,
                     color = if (done) colors.textSecondary else colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
-                AnimatedVisibility(done) {
-                    Text(doneText, style = ObsidianTheme.typography.labelStrong, color = colors.accentLight)
+                AnimatedVisibility(
+                    done,
+                    enter = fadeIn(tween(BrDurations.Enter, easing = BrMotion.Calm)),
+                    exit = fadeOut(tween(BrDurations.Fade)),
+                ) {
+                    Text(doneText, style = type.label, color = colors.accentSoft)
                 }
             }
-            AnimatedVisibility(!done, enter = ExpandEnter, exit = CollapseExit) {
-                Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.S)) { content() }
+            AnimatedVisibility(!done, enter = BrTransitions.expandIn, exit = BrTransitions.collapseOut) {
+                Column(verticalArrangement = Arrangement.spacedBy(BrSpacing.S)) { content() }
             }
         }
     }
@@ -642,29 +658,33 @@ private fun ChecklistItem(
 
 @Composable
 private fun Hint(text: String) {
-    Text(text, style = ObsidianTheme.typography.body, color = ObsidianTheme.colors.textSecondary)
+    Text(text, style = BedrockTheme.typography.body, color = BedrockTheme.colors.textSecondary)
 }
 
-/** "Waiting for permission…" with a spinner, then a lit "Permission granted" banner. */
+/** "Waiting for permission…" with a spinner, then a "Permission granted" banner in the accent. */
 @Composable
 private fun GrantStatus(granted: Boolean) {
-    AnimatedContent(granted, label = "grant") { ok ->
+    AnimatedContent(
+        granted,
+        transitionSpec = { BrTransitions.swap },
+        label = "grant",
+    ) { ok ->
         if (ok) {
             DoneBanner("Permission granted", "DebugQS can now flip the switches.")
         } else {
-            val colors = ObsidianTheme.colors
+            val colors = BedrockTheme.colors
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clip(ObShapes.Card)
-                    .background(colors.cardInner)
-                    .border(1.dp, colors.border, ObShapes.Card)
-                    .padding(ObSpacing.L),
+                    .clip(BrShapes.Large)
+                    .background(colors.surface)
+                    .border(1.dp, colors.line, BrShapes.Large)
+                    .padding(BrSpacing.L),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ObSpinner(size = 20.dp)
-                Spacer(Modifier.width(ObSpacing.M))
-                Text("Waiting for permission…", style = ObsidianTheme.typography.bodyLarge, color = colors.textSecondary)
+                BrSpinner(size = 20.dp)
+                Spacer(Modifier.width(BrSpacing.M))
+                Text("Waiting for permission…", style = BedrockTheme.typography.bodyLarge, color = colors.textSecondary)
             }
         }
     }
@@ -672,35 +692,35 @@ private fun GrantStatus(granted: Boolean) {
 
 @Composable
 private fun DoneBanner(title: String, body: String) {
-    val colors = ObsidianTheme.colors
-    ObCard(Modifier.fillMaxWidth(), color = colors.accentContainer, borderColor = colors.accentBorder) {
+    val colors = BedrockTheme.colors
+    ListGroup(color = colors.accentContainer) {
         ListRow(
             title = title,
             subtitle = body,
             icon = R.drawable.ic_check_circle,
-            iconTint = colors.accentLight,
-            titleStyleLarge = true,
+            iconTint = colors.accentSoft,
+            iconContainer = colors.accentContainerStrong,
         )
     }
 }
 
 @Composable
 private fun Troubleshooting(items: List<String>) {
-    val colors = ObsidianTheme.colors
+    val colors = BedrockTheme.colors
     var open by rememberSaveable { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.S)) {
+    Column(verticalArrangement = Arrangement.spacedBy(BrSpacing.S)) {
         Text(
             if (open) "Hide troubleshooting" else "Command not working?",
-            style = ObsidianTheme.typography.labelStrong,
-            color = colors.accentLight,
+            style = BedrockTheme.typography.label,
+            color = colors.accentSoft,
             modifier = Modifier
                 .clip(CircleShape)
                 .pressable(pressedScale = 0.95f, onClick = { open = !open })
-                .padding(vertical = ObSpacing.S, horizontal = ObSpacing.XXS),
+                .padding(vertical = BrSpacing.M, horizontal = BrSpacing.XXS),
         )
-        AnimatedVisibility(open, enter = ExpandEnter, exit = CollapseExit) {
-            ObCard(Modifier.fillMaxWidth(), color = colors.cardInner, borderColor = colors.border) {
-                Column(verticalArrangement = Arrangement.spacedBy(ObSpacing.M)) {
+        AnimatedVisibility(open, enter = BrTransitions.expandIn, exit = BrTransitions.collapseOut) {
+            BrCard(Modifier.fillMaxWidth(), color = colors.surfaceRaised) {
+                Column(verticalArrangement = Arrangement.spacedBy(BrSpacing.M)) {
                     items.forEach { Hint("• $it") }
                 }
             }

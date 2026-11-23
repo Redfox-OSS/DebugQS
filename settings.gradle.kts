@@ -19,9 +19,16 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://redfox-oss.github.io/obsidian/maven") {
-            content { includeGroup("dev.redfox") }
-        }
+        // Bedrock design system, published from github.com/Redfox-OSS/bedrock.
+        maven("https://redfox-oss.github.io/bedrock/maven") { content { includeGroup("dev.redfox") } }
+    }
+}
+
+// -PlocalBedrock builds Bedrock from a sibling checkout (../Bedrock) instead of the published
+// release, to try a library change in this app before it ships.
+if (providers.gradleProperty("localBedrock").isPresent) {
+    includeBuild("../Bedrock") {
+        dependencySubstitution { substitute(module("dev.redfox:bedrock")).using(project(":bedrock")) }
     }
 }
 
