@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
@@ -68,6 +70,16 @@ class DevStateMonitor(context: Context, private val onChange: (DevState) -> Unit
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { s ->
             s.launch { Privileged.state.collect { refresh() } }
             s.launch { DevSettings.permissionTick.drop(1).collect { refresh() } }
+            // Our own writes: re-read now, then again once the system has had a moment to react
+            // (Developer options taking the debugging switches with it, Wireless debugging being
+            // reverted until the network is allowed).
+            s.launch {
+                DevSettings.writeTick.drop(1).collectLatest {
+                    refresh()
+                    delay(SETTLE_MS)
+                    refresh()
+                }
+            }
         }
         refresh()
     }
@@ -98,6 +110,10 @@ class DevStateMonitor(context: Context, private val onChange: (DevState) -> Unit
         wireless = DevSettings.isOn(appContext, DevToggle.Wireless),
         privileged = Privileged.state.value,
     )
+
+    private companion object {
+        const val SETTLE_MS = 700L
+    }
 
     private fun update(next: DevState) {
         // The endpoint advertised from this phone's Wi‑Fi address; with a single one, that one.

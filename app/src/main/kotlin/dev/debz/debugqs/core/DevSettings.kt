@@ -35,6 +35,14 @@ object DevSettings {
         _permissionTick.value++
     }
 
+    /**
+     * Bumped after every write. Don't rely on content observers for our own changes: OEM freezers
+     * (OriginOS's fast_freezer) treat the tile's dialog as a cached app, and Android holds back
+     * observer callbacks to cached apps, so the panel never heard about the switch it just flipped.
+     */
+    private val _writeTick = MutableStateFlow(0)
+    val writeTick: StateFlow<Int> = _writeTick
+
     fun grantCommand(context: Context): String =
         "adb shell pm grant ${context.packageName} ${Manifest.permission.WRITE_SECURE_SETTINGS}"
 
@@ -74,6 +82,7 @@ object DevSettings {
                 put(context, DevToggle.Wireless, false)
             }
         }
+        _writeTick.value++
         return ToggleResult.Ok
     }
 
